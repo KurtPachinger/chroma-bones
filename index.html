@@ -9,52 +9,50 @@
 //used in module
 var sto, scene, renderer, camera, orbit, group, group2, group3, sprite, geometry, material, materialSides, color, bindVertex, bindBone, bound, timerGui, shadow, gui;
 
-</script><link rel="stylesheet" href="./style.css">
+</script><link rel="stylesheet" href="./style.scss">
 
 </head>
 <body>
 <!-- partial:index.partial.html -->
 <button id="help">Help</button>
 <fieldset disabled>
-	<div class="w33">
-		<legend>Refine Mask</legend>
-	<input type="color" list="presetColors" id="color" title="foreground white, background black" class="w50">
-	<datalist id="presetColors">
-    <option>#ffffff</option>
-    <option>#000000</option>
-  </datalist>
-	<input type="button" value="re-mask" id="touchupMask" class="w50" />
-	</div>
-	<div class="w66">
-  <legend>Select Images</legend>
-  <label class='hide' for="mask">Mask:</label>
-  <input class='hide' type="file" id="mask" name="file" accept="image/*" />
-  <img class='hide' src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/697675/GAN_mask.png" id="maskImg" crossOrigin="anonymous" />
-  <br class='hide' />
-  <label for="photo">Photo:</label>
-  <input type="file" id="photo" name="file" accept="image/*" />
-	</div>
+  <div class="w33">
+    <legend>Refine Mask</legend>
+    <input type="color" list="presetColors" id="color" title="foreground white, background black" class="w50">
+    <datalist id="presetColors">
+      <option>#ffffff</option>
+      <option>#000000</option>
+    </datalist>
+    <input type="button" value="re-mask" id="touchupMask" class="w50" />
+  </div>
+  <div class="w66">
+    <legend>Select Images</legend>
+    <label class='hide' for="mask">Mask:</label>
+    <input class='hide' type="file" id="mask" name="file" accept="image/*" />
+    <img class='hide' src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/697675/GAN_mask.png" id="maskImg" crossOrigin="anonymous" />
+    <br class='hide' />
+    <label for="photo">Photo:</label>
+    <input type="file" id="photo" name="file" accept="image/*" />
+  </div>
 </fieldset>
 
-
-
 <section>
-<div class='w33 edit'>
-  <img id="chromaImg" src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Donald_Trump_star_Hollywood_Walk_of_Fame.JPG" crossOrigin="anonymous" />
-  <canvas id="touchup"></canvas>
-	<canvas id="alpha"></canvas>
-</div>
+  <div class='w33 edit'>
+    <img id="chromaImg" src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Donald_Trump_star_Hollywood_Walk_of_Fame.JPG" crossOrigin="anonymous" />
+    <canvas id="touchup"></canvas>
+    <canvas id="alpha"></canvas>
+  </div>
 
-<canvas id="chroma" class='w33' title="corners, edge, and green are used to segment foreground with GrabCut"></canvas>
+  <canvas id="chroma" class='w33' title="corners, edge, and green are used to segment foreground with GrabCut"></canvas>
 
-<div class="rig w33">
-  <div id="rig"></div>
-</div>
+  <div class="rig w33">
+    <div id="rig"></div>
+  </div>
 
 </section>
 
 <br clear="both" />
-	
+
 <button id='export3d'>save glTF</button>
 
 <details>
@@ -66,127 +64,116 @@ var sto, scene, renderer, camera, orbit, group, group2, group3, sprite, geometry
       <a href='https://unboring.net/workflows/animation.html'>AnimationMixer</a> or
       <a href='http://www.realitymeltdown.com/WebGL3/character-controller.html'>Character Controller</a><br />
       <small>
-    [<a href='https://jsfiddle.net/satori99/pay0oqcd/'>1</a>],
-    [<a href='http://yomotsu.net/blog/2015/10/31/three-r73-anim.html'>2</a>],
-    [<a href='https://threejs.org/examples/#webgl_geometry_spline_editor'>3</a>]</small></li>
+        [<a href='https://jsfiddle.net/satori99/pay0oqcd/'>1</a>],
+        [<a href='http://yomotsu.net/blog/2015/10/31/three-r73-anim.html'>2</a>],
+        [<a href='https://threejs.org/examples/#webgl_geometry_spline_editor'>3</a>]</small>
+    </li>
     <li><a href='https://doc.babylonjs.com/how_to/how_to_use_bones_and_skeletons'>Babylon</a></li>
 
     <li>Inverse Kinematics: <small>
-    [<a href='https://social.msdn.microsoft.com/Forums/SECURITY/en-US/3f9e03b4-2670-41b5-9a91-2b72c77fe843/using-kinect-v2-jointorientations-along-with-threejs-skinnedmesh?forum=kinectv2sdk'>1</a>],
-    [<a href='https://www.openprocessing.org/sketch/607042'>2</a>],
-    [<a href='https://www.openprocessing.org/sketch/629151'>3</a>],
-    [<a href='https://stackoverflow.com/questions/42940084/is-there-any-basic-javascript-inverse-kinematic-script'>4</a>],
-    [<a href='http://lo-th.github.io/fullik/#3D_demo_0'>5</a>],
-    [<a href='https://codepen.io/jaggedsoft/pen/ZbxPZd/'>6</a>],
-    [<a href='http://brm.io/matter-js/demo/#chains'>7</a>],
-    [<a href='http://esotericsoftware.com/spine-demos'>8</a>],
-    [<a href='https://www.khanacademy.org/computer-programming/inverse-kinematics/1191743453'>9</a>],
-    [<a href='https://codepen.io/ge1doot/pres/zGywYw'>10</a>]</small></li>
+        [<a href='https://social.msdn.microsoft.com/Forums/SECURITY/en-US/3f9e03b4-2670-41b5-9a91-2b72c77fe843/using-kinect-v2-jointorientations-along-with-threejs-skinnedmesh?forum=kinectv2sdk'>1</a>],
+        [<a href='https://www.openprocessing.org/sketch/607042'>2</a>],
+        [<a href='https://www.openprocessing.org/sketch/629151'>3</a>],
+        [<a href='https://stackoverflow.com/questions/42940084/is-there-any-basic-javascript-inverse-kinematic-script'>4</a>],
+        [<a href='http://lo-th.github.io/fullik/#3D_demo_0'>5</a>],
+        [<a href='https://codepen.io/jaggedsoft/pen/ZbxPZd/'>6</a>],
+        [<a href='http://brm.io/matter-js/demo/#chains'>7</a>],
+        [<a href='http://esotericsoftware.com/spine-demos'>8</a>],
+        [<a href='https://www.khanacademy.org/computer-programming/inverse-kinematics/1191743453'>9</a>],
+        [<a href='https://codepen.io/ge1doot/pres/zGywYw'>10</a>]</small></li>
     <li><a href="http://dragonbones.com/">DragonBones</a></li>
     <li>applications: <a href="https://i.materialise.com/en">3d print</a>, forensics, architecture, <a href='https://experiments.withgoogle.com/collection/ai/move-mirror/view'>avatar</a>, folding phone...</li>
-		<li><a href="https://colab.research.google.com/drive/11z58bl3meSzo6kFqkahMa35G5jmh2Wgt#scrollTo=eclLG4xlJRIE">PIFuHD</a></li><li><a href="https://github.com/google/monster-mash">Google Monster Mash</a></li>
-		
+    <li><a href="https://colab.research.google.com/drive/11z58bl3meSzo6kFqkahMa35G5jmh2Wgt#scrollTo=eclLG4xlJRIE">PIFuHD</a></li>
+    <li><a href="https://github.com/google/monster-mash">Google Monster Mash</a></li>
+
   </ol>
 
-	<ul>3d output test
-	<li><a href="//threejs.org/editor/">Three.js Editor</a></li>
-	<li><a href="//creators3d.com/online-viewer">3D viewer</a></li>
-		<li><a href="https://i.materialise.com/api">i.materialise API</a></li>
-	</ul>
-	
+  <ul>3d output test
+    <li><a href="//threejs.org/editor/">Three.js Editor</a></li>
+    <li><a href="//creators3d.com/online-viewer">3D viewer</a></li>
+    <li><a href="https://i.materialise.com/api">i.materialise API</a></li>
+  </ul>
+
 </details>
 
-
-
-
-
-
 <script type="text/javascript">
-let driver;
-// Start the introduction
-document.querySelector('#help')
-	.addEventListener('click', function (e) {
-	e.preventDefault();
-	e.stopPropagation();
-	
-	if(driver==undefined){
-	  // lazy loading Help
-	  let css = document.createElement('link');
-	  css.href = 'https://unpkg.com/driver.js/dist/driver.min.css';
-	  css.rel = 'stylesheet';
-	  document.head.appendChild(css);
-	  let js = document.createElement('script');
-	  js.src = 'https://unpkg.com/driver.js/dist/driver.min.js';
-	  js.onload = function(){
-
-	
-      driver = new Driver();
-      // Define the steps for introduction
-      driver.defineSteps([
-        {
-        element: '#photo',
-        popover: {
-          title: 'Choose file [image or photo]',
-          description: 'Select an image to process. Program will extract foreground and skin mesh.',
+  let driver;
+  // Start the introduction
+  document.querySelector('#help')
+    .addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (driver == undefined) {
+        // lazy loading Help
+        let css = document.createElement('link');
+        css.href = 'https://unpkg.com/driver.js/dist/driver.min.css';
+        css.rel = 'stylesheet';
+        document.head.appendChild(css);
+        let js = document.createElement('script');
+        js.src = 'https://unpkg.com/driver.js/dist/driver.min.js';
+        js.onload = function() {
+          driver = new Driver();
+          // Define the steps for introduction
+          driver.defineSteps([{
+              element: '#photo',
+              popover: {
+                title: 'Choose file [image or photo]',
+                description: 'Select an image to process. Program will extract foreground and skin mesh.',
+              }
+            },
+            {
+              element: '#color',
+              popover: {
+                title: 'Refine mask [color]',
+                description: 'Select black for background, or white for foreground. Draw hints on image below.',
+              }
+            },
+            {
+              element: '#touchupMask',
+              popover: {
+                title: 'Refine mask [apply]',
+                description: 'After drawing hints on image, click to apply refinement.',
+              }
+            },
+            {
+              element: '#chromaImg',
+              popover: {
+                title: 'Source [image]',
+                description: 'Displays image which hints can be drawn on to refine foreground mask.',
+              }
+            },
+            {
+              element: '#chroma',
+              popover: {
+                title: 'OpenCV [image]',
+                description: 'Image with foreground extracted, as well as control points for contour and skeleton.',
+              }
+            },
+            {
+              element: '#rig canvas',
+              popover: {
+                title: 'Three [image]',
+                description: 'A 3d scene with skinned meshes from image. Controls are in GUI dialog.',
+              }
+            },
+            {
+              element: '.close-button',
+              popover: {
+                title: 'Controls [GUI]',
+                description: 'Set Three.js options and transform scene objects, bind bones, etc.',
+              }
+            },
+          ]);
+          driver.start();
         }
-        },
-				{
-        element: '#color',
-        popover: {
-          title: 'Refine mask [color]',
-          description: 'Select black for background, or white for foreground. Draw hints on image below.',
-        }
-        },
-				{
-        element: '#touchupMask',
-        popover: {
-          title: 'Refine mask [apply]',
-          description: 'After drawing hints on image, click to apply refinement.',
-        }
-        },
-				{
-        element: '#chromaImg',
-        popover: {
-          title: 'Source [image]',
-          description: 'Displays image which hints can be drawn on to refine foreground mask.',
-        }
-        },
-				{
-        element: '#chroma',
-        popover: {
-          title: 'OpenCV [image]',
-          description: 'Image with foreground extracted, as well as control points for contour and skeleton.',
-        }
-        },
-				{
-        element: '#rig canvas',
-        popover: {
-          title: 'Three [image]',
-          description: 'A 3d scene with skinned meshes from image. Controls are in GUI dialog.',
-        }
-        },
-				{
-        element: '.close-button',
-        popover: {
-          title: 'Controls [GUI]',
-          description: 'Set Three.js options and transform scene objects, bind bones, etc.',
-        }
-        },
-
-				
-      ]);
-		  driver.start();
-	}
-	document.head.appendChild(js);
-		
-	}else{
-		driver.start();
-	}
-	
-});
+        document.head.appendChild(js);
+      } else {
+        driver.start();
+      }
+    });
 </script>
 <!-- partial -->
-  <script src='https://webrtc.github.io/adapter/adapter.js'></script>
+<script src='https://webrtc.github.io/adapter/adapter.js'></script>
 <script src='https://s3-us-west-2.amazonaws.com/s.cdpn.io/697675/utils.js'></script>
 <script src='https://cdnjs.cloudflare.com/ajax/libs/EaselJS/1.0.2/easeljs.min.js'></script><script type="module" src="./script.js"></script>
 
