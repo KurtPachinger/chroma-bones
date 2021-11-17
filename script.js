@@ -2,42 +2,38 @@
 //module globals in head
 //r123+ skins mesh differently :(
 import * as THREE from "https://unpkg.com/three@0.122.0/build/three.module.js";
-import {OrbitControls} from "https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js";
-import {GUI} from 'https://unpkg.com/three@0.122.0/examples/jsm/libs/dat.gui.module.js';
-import {TessellateModifier} from 'https://unpkg.com/three@0.122.0/examples/jsm/modifiers/TessellateModifier.js';
-import {GLTFExporter} from 'https://unpkg.com/three@0.122.0/examples/jsm/exporters/GLTFExporter.js';
+import { OrbitControls } from "https://unpkg.com/three@0.122.0/examples/jsm/controls/OrbitControls.js";
+import { GUI } from "https://unpkg.com/three@0.122.0/examples/jsm/libs/dat.gui.module.js";
+import { TessellateModifier } from "https://unpkg.com/three@0.122.0/examples/jsm/modifiers/TessellateModifier.js";
+import { GLTFExporter } from "https://unpkg.com/three@0.122.0/examples/jsm/exporters/GLTFExporter.js";
 
 //docs.opencv.org/trunk/d2/df0/tutorial_js_table_of_contents_imgproc.html
-let utils = new Utils('errorMessage');
+let utils = new Utils("errorMessage");
 utils.loadOpenCv(() => {
-	grabCut();
+  grabCut();
   //utils.createFileFromUrl('/haarcascade_frontalface_default.xml', 'https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalface_default.xml', faceDetect);
 });
 
-utils.addFileInputHandler('photo', 'chroma');
-utils.addFileInputHandler('mask', 'mask');
+utils.addFileInputHandler("photo", "chroma");
+utils.addFileInputHandler("mask", "mask");
 
-
-
-
-utils.loadImageToCanvas = function(url, cavansId) {
+utils.loadImageToCanvas = function (url, cavansId) {
   let img = document.getElementById(cavansId + "Img");
-	img.crossOrigin = "anonymous";
-  img.onload = function() {
+  img.crossOrigin = "anonymous";
+  img.onload = function () {
     if (cavansId == "mask") {
       img.src = url;
       return true;
     }
-		let context = touchup.getContext("2d");
-		context.clearRect(0, 0, touchup.width, touchup.height);
-		let canvas = document.getElementById(cavansId);
-		let ctx = canvas.getContext("2d");
+    let context = touchup.getContext("2d");
+    context.clearRect(0, 0, touchup.width, touchup.height);
+    let canvas = document.getElementById(cavansId);
+    let ctx = canvas.getContext("2d");
     ctx.drawImage(img, 0, 0, img.width, img.height);
     grabCut();
   };
   img.src = url;
 };
-
 
 //settings
 sto = {
@@ -48,9 +44,9 @@ sto = {
   state: {
     animateBones: true
   },
-  update: function(init) {
+  update: function (init) {
     if (init) {
-			document.documentElement.className = "loading";
+      document.documentElement.className = "loading";
       if (scene) {
         for (let i = scene.children.length - 1; i >= 0; i--) {
           let ch = scene.children[i];
@@ -63,25 +59,20 @@ sto = {
       sto.contours = [];
       sto.bones = [];
       sto.export3d = [];
-			
-			//UI disabled
-			document.getElementsByTagName('fieldset')[0].disabled = true;
-			
+
+      //UI disabled
+      document.getElementsByTagName("fieldset")[0].disabled = true;
     }
     //src img normalized to 1 for 3d origin/precision, and quality resolution-dependent
-		let src = document.getElementById("chromaImg");
+    let src = document.getElementById("chromaImg");
     sto.width = src.width;
     sto.height = src.height;
-		renderer && renderer.setSize(sto.width, sto.height);
+    renderer && renderer.setSize(sto.width, sto.height);
   }
 };
 
 function faceDetect() {
-	
-	
-	
   console.log("faceDetect");
-
 
   let src = cv.imread("chromaImg");
 
@@ -95,9 +86,14 @@ function faceDetect() {
     maxSize = new cv.Size(sto.width * 2, sto.height * 2);
 
   //www.emgu.com/wiki/files/1.5.0.0/Help/html/e2278977-87ea-8fa9-b78e-0e52cfe6406a.htm
-  faceCascade.detectMultiScale(gray,faces,1.05,9,
+  faceCascade.detectMultiScale(
+    gray,
+    faces,
+    1.05,
+    9,
     cv.CASCADE_FIND_BIGGEST_OBJECT | cv.CASCADE_DO_ROUGH_SEARCH,
-    minSize,maxSize
+    minSize,
+    maxSize
   );
   faceCascade.delete();
 
@@ -117,7 +113,14 @@ function faceDetect() {
 
     //facemask
     let mskWH = [point2.x - point1.x, point2.y - point1.y];
-    cv.resize(decal, decal, new cv.Size(mskWH[0], mskWH[1]), 0, 0, cv.INTER_NEAREST);
+    cv.resize(
+      decal,
+      decal,
+      new cv.Size(mskWH[0], mskWH[1]),
+      0,
+      0,
+      cv.INTER_NEAREST
+    );
     let mskRoi = src.roi(new cv.Rect(point1.x, point1.y, mskWH[0], mskWH[1]));
 
     //mask alpha
@@ -138,29 +141,24 @@ function faceDetect() {
   cv.imshow("chroma", src);
   src.delete();
 
-	
   grabCut();
 }
 
 async function grabCut() {
-	
-	let prog = new Promise((resolve, reject) => {
-		//promotes css
+  let prog = new Promise((resolve, reject) => {
+    //promotes css
     setTimeout(() => resolve("reset, loading/hi-res src"), 0);
-		sto.update(true);
+    sto.update(true);
   });
   let result = await prog;
-	
 
-
-	
   console.log("grabCut");
   //todo: black/transparent are lost
 
-  let src = cv.imread("chromaImg");//skip faceDetect
+  let src = cv.imread("chromaImg"); //skip faceDetect
   cv.cvtColor(src, src, cv.COLOR_RGBA2RGB, 0);
   let mask = new cv.Mat.zeros(src.size(), cv.CV_8UC1);
-  const D = (sto.width + sto.height) / 2 * 0.15;
+  const D = ((sto.width + sto.height) / 2) * 0.15;
 
   let GC = {
     //answers.opencv.org/question/132163/grabcut-mask-values/
@@ -168,7 +166,7 @@ async function grabCut() {
     FGD: new cv.Scalar(cv.GC_FGD),
     PR_BGD: new cv.Scalar(cv.GC_PR_BGD),
     PR_FGD: new cv.Scalar(cv.GC_PR_FGD),
-    GreenScreen: function(i, j) {
+    GreenScreen: function (i, j) {
       if (
         src.ucharPtr(i, j)[0] < 48 &&
         src.ucharPtr(i, j)[1] > 160 &&
@@ -187,34 +185,36 @@ async function grabCut() {
   cv.circle(mask, new cv.Point(0, 0), D * 2, GC.PR_BGD, -1, 4, 0);
   cv.circle(mask, new cv.Point(sto.width, 0), D * 2, GC.PR_BGD, -1, 4, 0);
   cv.circle(mask, new cv.Point(0, sto.height), D * 2, GC.PR_BGD, -1, 4, 0);
-  cv.circle(mask, new cv.Point(sto.width, sto.height), D * 2, GC.PR_BGD, -1, 4, 0);
+  cv.circle(
+    mask,
+    new cv.Point(sto.width, sto.height),
+    D * 2,
+    GC.PR_BGD,
+    -1,
+    4,
+    0
+  );
 
   let touchup = cv.imread("touchup");
   let dsize = new cv.Size(sto.width, sto.height);
   cv.resize(touchup, touchup, dsize, 0, 0, cv.INTER_AREA);
-	
-	
 
   //greenscreen samples
   for (let i = 0; i < src.rows; i += 3) {
     for (let j = 0; j < src.cols; j += 3) {
-      
       //if touchup mask pixel >50% opaque, G channel value
-			let point1 = new cv.Point(j-1, i-1);
-			let point2 = new cv.Point(j+1, i+1);
+      let point1 = new cv.Point(j - 1, i - 1);
+      let point2 = new cv.Point(j + 1, i + 1);
       if (touchup.ucharPtr(i, j)[3] > 127) {
         if (touchup.ucharPtr(i, j)[1] < 64) {
-					cv.rectangle(mask, point1, point2, GC.BGD, -1, cv.LINE_8, 0);
-        }else if (touchup.ucharPtr(i, j)[1] > 192) {
-					cv.rectangle(mask, point1, point2, GC.FGD, -1, cv.LINE_8, 0);
+          cv.rectangle(mask, point1, point2, GC.BGD, -1, cv.LINE_8, 0);
+        } else if (touchup.ucharPtr(i, j)[1] > 192) {
+          cv.rectangle(mask, point1, point2, GC.FGD, -1, cv.LINE_8, 0);
         }
-      }
-			
-			else if (GC.GreenScreen(i, j)) {
+      } else if (GC.GreenScreen(i, j)) {
         mask.ucharPtr(i, j)[0] = GC.PR_BGD;
-				//cv.rectangle(mask, point1, point2, GC.PR_BGD, -1, cv.LINE_8, 0);
+        //cv.rectangle(mask, point1, point2, GC.PR_BGD, -1, cv.LINE_8, 0);
       }
-
     }
   }
 
@@ -223,15 +223,23 @@ async function grabCut() {
     //faces foreground
     let pt = faces[i];
     let GC_PR = [
-			new cv.Point(pt.x, pt.y - pt.height / 3),
-			new cv.Point(pt.x + pt.width, pt.y + pt.height * 3)
-		];
+      new cv.Point(pt.x, pt.y - pt.height / 3),
+      new cv.Point(pt.x + pt.width, pt.y + pt.height * 3)
+    ];
     let GC = [
-			new cv.Point(pt.x + pt.width / 3, pt.y),
-			new cv.Point(pt.x + pt.width - pt.width / 3, pt.y + pt.height * 3) //*3 head-heights in assumed body
-		];
+      new cv.Point(pt.x + pt.width / 3, pt.y),
+      new cv.Point(pt.x + pt.width - pt.width / 3, pt.y + pt.height * 3) //*3 head-heights in assumed body
+    ];
 
-    cv.rectangle(mask, GC_PR[0], GC_PR[1], new cv.Scalar(cv.GC_PR_FGD), -1, 4, 0);
+    cv.rectangle(
+      mask,
+      GC_PR[0],
+      GC_PR[1],
+      new cv.Scalar(cv.GC_PR_FGD),
+      -1,
+      4,
+      0
+    );
     cv.rectangle(mask, GC[0], GC[1], new cv.Scalar(cv.GC_FGD), -1, 4, 0);
   }
 
@@ -255,24 +263,22 @@ async function grabCut() {
   //let point2 = new cv.Point(rect.x + rect.width, rect.y + rect.height);
   //cv.rectangle(src, point1, point2, new cv.Scalar(0, 0, 255));
 
-	
-	//close holes, reduce artefacts (not responsive)
-	cv.medianBlur(mask, mask, 3);
-	
+  //close holes, reduce artefacts (not responsive)
+  cv.medianBlur(mask, mask, 3);
+
   let alphaMap = src.clone();
-  var promise = new Promise(function(resolve) {
-		
+  var promise = new Promise(function (resolve) {
     if (sampleSize) {
       //draw alpha
       cv.cvtColor(src, src, cv.COLOR_RGB2RGBA);
       for (let i = 0; i < src.rows; i++) {
         for (let j = 0; j < src.cols; j++) {
           if (
-            (mask.ucharPtr(i, j)[0] === 0 ||
-              mask.ucharPtr(i, j)[0] === 2) &&
+            (mask.ucharPtr(i, j)[0] === 0 || mask.ucharPtr(i, j)[0] === 2) &&
             touchup.ucharPtr(i, j)[1] < 128
             //GC.GreenScreen(i, j)
-          ) { //threejs.org/docs/#api/en/materials/MeshDistanceMaterial.alphaMap
+          ) {
+            //threejs.org/docs/#api/en/materials/MeshDistanceMaterial.alphaMap
             alphaMap.ucharPtr(i, j)[0] = 0;
             alphaMap.ucharPtr(i, j)[1] = 0;
             alphaMap.ucharPtr(i, j)[2] = 0;
@@ -281,14 +287,11 @@ async function grabCut() {
             alphaMap.ucharPtr(i, j)[0] = 255;
             alphaMap.ucharPtr(i, j)[1] = 255;
             alphaMap.ucharPtr(i, j)[2] = 255;
-
           }
         }
       }
     }
     touchup.delete();
-		
-		
 
     cv.imshow("alpha", alphaMap);
     cv.imshow("chroma", src);
@@ -300,7 +303,7 @@ async function grabCut() {
     resolve("GrabCut => Segmentation");
   });
 
-  promise.then(function(value) {
+  promise.then(function (value) {
     // expected output: "GrabCut => Segmentation"
     console.log(value);
     //sto.dst = document.getElementById("chroma").toDataURL("image/png");
@@ -327,12 +330,27 @@ function segmentation() {
   //2nd reduce noise
   let anchor = new cv.Point(-1, -1);
   let M = cv.Mat.ones(5, 5, cv.CV_8U);
-  cv.morphologyEx(dst,dst,cv.MORPH_OPEN,M,anchor,1,cv.BORDER_CONSTANT,cv.morphologyDefaultBorderValue());
+  cv.morphologyEx(
+    dst,
+    dst,
+    cv.MORPH_OPEN,
+    M,
+    anchor,
+    1,
+    cv.BORDER_CONSTANT,
+    cv.morphologyDefaultBorderValue()
+  );
   M.delete();
 
   let contours = new cv.MatVector();
   let hierarchy = new cv.Mat();
-  cv.findContours(dst,contours,hierarchy,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_SIMPLE);
+  cv.findContours(
+    dst,
+    contours,
+    hierarchy,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  );
 
   let hull = new cv.Mat();
   let defect = new cv.Mat();
@@ -343,7 +361,7 @@ function segmentation() {
   cv.drawContours(dst, contours, -1, colorBleed, cv.FILLED);
   dst.delete();
 
-  var promise = new Promise(function(resolve) {
+  var promise = new Promise(function (resolve) {
     for (let i = 0; i < contours.size(); ++i) {
       let cnt = contours.get(i);
 
@@ -357,7 +375,7 @@ function segmentation() {
       };
 
       //area to test shallow cavity and skin weight
-			//todo: minimum area threshold (noise)
+      //todo: minimum area threshold (noise)
       let area = Math.sqrt(cv.contourArea(cnt));
       //contour center
       let M = cv.moments(cnt),
@@ -394,10 +412,12 @@ function segmentation() {
         );
 
         //todo: center end bone, align midbone perpendicular
-        if (area / ((sto.width + sto.height) / 2) < 0.05 || ptTest / area < 0.02) {
+        if (
+          area / ((sto.width + sto.height) / 2) < 0.05 ||
+          ptTest / area < 0.02
+        ) {
           console.log("not minimum area");
         } else {
-
           sto.contours[i].CLUSTER.push({
             start: {
               x: start.x,
@@ -454,17 +474,17 @@ function segmentation() {
 
         let prev = bones[j][bones[j].length - 1];
         bones[j].push([
-					midbone[0] - prev[0],
-					midbone[1] - prev[1],
-					[midbone[0], midbone[1]]
-				]);
+          midbone[0] - prev[0],
+          midbone[1] - prev[1],
+          [midbone[0], midbone[1]]
+        ]);
 
         //convex
         bones[j].push([
-					pt.end.x - prev[0],
-					pt.end.y - prev[1],
-					[pt.end.x, pt.end.y]
-				]);
+          pt.end.x - prev[0],
+          pt.end.y - prev[1],
+          [pt.end.x, pt.end.y]
+        ]);
       }
 
       sto.contours[i].BONES.push(bones);
@@ -490,9 +510,8 @@ function segmentation() {
     }
     //console.info('sto.contours', sto.contours);
 
-		
-		let alphaMap = cv.imread('alpha');
-		const D = (sto.width + sto.height) / 128;
+    let alphaMap = cv.imread("alpha");
+    const D = (sto.width + sto.height) / 128;
     // draw contours with random Scalar
     for (let i = 0; i < contours.size(); ++i) {
       let color = new cv.Scalar(
@@ -501,18 +520,27 @@ function segmentation() {
         Math.round(Math.random() * 128)
       );
       cv.drawContours(src, poly, i, color, 1, 8, hierarchy, 0);
-			//draw contour edges on alpha map to close shadow
-			cv.drawContours(alphaMap, poly, i, [255,255,255,255], D, 8, hierarchy, 0);
+      //draw contour edges on alpha map to close shadow
+      cv.drawContours(
+        alphaMap,
+        poly,
+        i,
+        [255, 255, 255, 255],
+        D,
+        8,
+        hierarchy,
+        0
+      );
     }
     hierarchy.delete();
     contours.delete();
 
     //sto.dst = document.getElementById('chroma').toDataURL('image/png'); //TEST registration
     cv.imshow("chroma", src);
-		cv.imshow("alpha", alphaMap);
+    cv.imshow("alpha", alphaMap);
 
     src.delete();
-		alphaMap.delete();
+    alphaMap.delete();
 
     hull.delete();
     defect.delete();
@@ -520,10 +548,10 @@ function segmentation() {
     resolve("Segmentation => Three.js");
   });
 
-  promise.then(function(value) {
+  promise.then(function (value) {
     // expected output: "Segmentation => Three.js"
     console.log(value);
-    
+
     three();
   });
 }
@@ -531,7 +559,9 @@ function segmentation() {
 function getColor(canvas, x, y) {
   let mat = cv.imread(canvas);
   let colour = mat.ucharPtr(y, x);
-  colour = new THREE.Color("rgb(" + colour[0] + ", " + colour[1] + ", " + colour[2] + ")");
+  colour = new THREE.Color(
+    "rgb(" + colour[0] + ", " + colour[1] + ", " + colour[2] + ")"
+  );
   mat.delete();
   return colour;
 }
@@ -540,7 +570,6 @@ function getColor(canvas, x, y) {
 //THREE.JS######################################//
 //==========//==========//==========//==========//
 function three() {
-
   if (!scene) {
     initScene();
     camera.position.set(0.5, -0.5, 2.0);
@@ -554,87 +583,89 @@ function three() {
   camera.aspect = sto.width / sto.height;
 
   group = new THREE.Group();
-  group.name = 'meshes';
+  group.name = "meshes";
   scene.add(group);
   group2 = new THREE.Group();
-  group2.name = 'artefact';
+  group2.name = "artefact";
   group3 = new THREE.Group();
-  group3.name = 'raytest';
+  group3.name = "raytest";
   group3.visible = false;
   sprite = new THREE.Group();
-  sprite.name = 'sprite';
+  sprite.name = "sprite";
   sprite.renderOrder = 100;
   sprite.visible = false;
   group.add(group2, group3, sprite);
 
   var textureLoader = new THREE.TextureLoader();
   textureLoader.crossOrigin = true;
-	textureLoader.load(document.getElementById('chromaImg').src, function(texture) {
-		
-		texture.anisotropy = 8;
+  textureLoader.load(
+    document.getElementById("chromaImg").src,
+    function (texture) {
+      texture.anisotropy = 8;
 
-    let alphaMap = new THREE.CanvasTexture(document.getElementById('alpha'));
-    alphaMap.offset.set(0, 1);
+      let alphaMap = new THREE.CanvasTexture(document.getElementById("alpha"));
+      alphaMap.offset.set(0, 1);
 
-    material = new THREE.MeshStandardMaterial({
-      color: 0x808080,
-      wireframe: false,
-      skinning: true,
-      side: THREE.FrontSide, //hide gaps in skinmesh
-      map: texture,
-      transparent: true,
-      //premultipliedAlpha: true, //texture alpha transparency
-      alphaMap: alphaMap,
-      alphaTest: 0.5,
-      //extra
-			dithering: true,
-			bumpMap: texture,
-			roughnessMap: texture,
-			metalnessMap: texture,
-			bumpScale: 0.01,
-      roughness: 0.8,
-			metalness: 0.5,
-    });
-    texture.offset.set(0, 1);
-
-    //loop contours for shape/bones/mesh
-    let contours = sto.contours;
-    for (let i = 0; i < sto.contours.length; i++) {
-      //www.adrianboeing.com/demoscene/test/particleimage/canvas_particles_image.html
-      let color = getColor(
-        'chromaImg',
-        contours[i].BONES[0][0],
-        contours[i].BONES[0][1]
-      );
-
-      materialSides = new THREE.MeshStandardMaterial({
-        color: color,
-        skinning: true
+      material = new THREE.MeshStandardMaterial({
+        color: 0x808080,
+        wireframe: false,
+        skinning: true,
+        side: THREE.FrontSide, //hide gaps in skinmesh
+        map: texture,
+        transparent: true,
+        //premultipliedAlpha: true, //texture alpha transparency
+        alphaMap: alphaMap,
+        alphaTest: 0.5,
+        //extra
+        dithering: true,
+        bumpMap: texture,
+        roughnessMap: texture,
+        metalnessMap: texture,
+        bumpScale: 0.01,
+        roughness: 0.8,
+        metalness: 0.5
       });
+      texture.offset.set(0, 1);
 
+      //loop contours for shape/bones/mesh
+      let contours = sto.contours;
+      for (let i = 0; i < sto.contours.length; i++) {
+        //www.adrianboeing.com/demoscene/test/particleimage/canvas_particles_image.html
+        let color = getColor(
+          "chromaImg",
+          contours[i].BONES[0][0],
+          contours[i].BONES[0][1]
+        );
 
-      initBones(contours[i]);//this is the engine
-		
+        materialSides = new THREE.MeshStandardMaterial({
+          color: color,
+          skinning: true
+        });
 
-    }
-
-    complete(timerGui);
-
-    function complete(timer) {
-      clearTimeout(timer);
-      if ((group.children.length + group2.children.length) >= sto.contours.length * 2 + 1) {
-				console.log(sto, scene.children);
-				//UI enabled
-				document.documentElement.removeAttribute('class');
-				document.getElementsByTagName('fieldset')[0].disabled = false;
-        sto.update(false);
-        setupDatGui();
-				
-        return;
+        initBones(contours[i]); //this is the engine
       }
-      timer = setTimeout(complete, 500);
+
+      complete(timerGui);
+
+      function complete(timer) {
+        clearTimeout(timer);
+        if (
+          group.children.length + group2.children.length >=
+          sto.contours.length * 2 + 1
+        ) {
+          console.log(sto, scene.children);
+          //UI enabled
+          document.documentElement.removeAttribute("class");
+          document.getElementsByTagName("fieldset")[0].disabled = false;
+          sto.update(false);
+          setupDatGui();
+
+          return;
+        }
+        timer = setTimeout(complete, 500);
+      }
     }
-  });
+  );
 
   function initScene() {
     scene = new THREE.Scene();
@@ -649,23 +680,22 @@ function three() {
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.setSize(sto.width, sto.height);
     renderer.setClearColor("#00FF00", 0.0);
-		
+
     document.getElementById("rig").appendChild(renderer.domElement);
 
     orbit = new OrbitControls(camera, renderer.domElement);
     orbit.target.set(0.5, -0.5, 0);
     //lights
-		renderer.physicallyCorrectLights = true;
-    var light = new THREE.AmbientLight(0xffffff,2);
+    renderer.physicallyCorrectLights = true;
+    var light = new THREE.AmbientLight(0xffffff, 2);
     var lightShadow = new THREE.PointLight(0xffffff, 5, 4, 2);
     lightShadow.position.set(0.5, 0.5, 0.5);
     lightShadow.castShadow = true;
     lightShadow.shadow.mapSize.set(1024, 1024);
-		
+
     var lightShadowHelper = new THREE.PointLightHelper(lightShadow, 0.25);
     scene.add(light, lightShadow, lightShadowHelper);
-		
-		
+
     //plane
     var planeGeometry = new THREE.PlaneBufferGeometry(2, 2);
     planeGeometry.rotateX(Math.PI / 2);
@@ -676,13 +706,13 @@ function three() {
     plane.position.set(0.5, -1, 0);
     plane.rotation.z = Math.PI;
     plane.receiveShadow = true;
-		plane.name = "floor"; 
+    plane.name = "floor";
     //grid
     var helper = new THREE.GridHelper(2, 2);
     helper.position.set(0.5, -1, 0);
     helper.material.opacity = 0.25;
     helper.material.transparent = true;
-		helper.receiveShadow = true;
+    helper.receiveShadow = true;
     scene.add(plane, helper);
 
     scene.fog = new THREE.FogExp2(0xf0f0f0, 0.1);
@@ -691,9 +721,9 @@ function three() {
   let resizeTimer;
   window.addEventListener(
     "resize",
-    function() {
+    function () {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(function() {
+      resizeTimer = setTimeout(function () {
         sto.update(false);
       }, 250);
     },
@@ -701,7 +731,7 @@ function three() {
   );
 
   function initBones(contour) {
-contour.BONES[0][3]
+    contour.BONES[0][3];
     let skinArr = createGeometry(contour.SHAPE, contour.BONES[0][3]);
     let geometry = skinArr[0],
       shadow = skinArr[1];
@@ -717,26 +747,24 @@ contour.BONES[0][3]
     let defects = contour.CLUSTER;
     let cavity = [];
     for (let i = 0; i < defects.length; i++) {
-
       cavity[i] = {};
 
       cavity[i].convex = {
-        'x': (((defects[i].start.x + defects[i].end.x) / 2) / sto.width),
-        'y': (((-defects[i].start.y + -defects[i].end.y) / 2) / sto.height)
+        x: (defects[i].start.x + defects[i].end.x) / 2 / sto.width,
+        y: (-defects[i].start.y + -defects[i].end.y) / 2 / sto.height
       };
       cavity[i].concave = {
-        'x': (defects[i].far.x / sto.width),
-        'y': (-defects[i].far.y / sto.height)
+        x: defects[i].far.x / sto.width,
+        y: -defects[i].far.y / sto.height
       };
       cavity[i].end = {
-        'x': (defects[i].end.x / sto.width),
-        'y': (-defects[i].end.y / sto.height)
+        x: defects[i].end.x / sto.width,
+        y: -defects[i].end.y / sto.height
       };
       cavity[i].midpoint = {
-        'x': (cavity[i].convex.x + cavity[i].concave.x) / 2,
-        'y': (cavity[i].convex.y + cavity[i].concave.y) / 2
+        x: (cavity[i].convex.x + cavity[i].concave.x) / 2,
+        y: (cavity[i].convex.y + cavity[i].concave.y) / 2
       };
-
     }
 
     let root = new THREE.Shape();
@@ -747,7 +775,7 @@ contour.BONES[0][3]
 
       let src = cavity[i];
 
-      let dst = (i == defects.length - 1) ? cavity[0] : cavity[i + 1];
+      let dst = i == defects.length - 1 ? cavity[0] : cavity[i + 1];
       //console.log(src, dst);
 
       //bone root (inner hull)
@@ -756,8 +784,8 @@ contour.BONES[0][3]
       }
       root.lineTo(dst.concave.x, dst.concave.y);
       //Bone_0
-      bindVertex = bones[(i * 3) + 0];
-      bindBone = bones[(i * 3) + 1];
+      bindVertex = bones[i * 3 + 0];
+      bindBone = bones[i * 3 + 1];
       bone0.moveTo(src.concave.x, src.concave.y);
       bone0.lineTo(src.midpoint.x, src.midpoint.y);
       bone0.lineTo(dst.midpoint.x, dst.midpoint.y);
@@ -765,41 +793,41 @@ contour.BONES[0][3]
       bone0.closePath();
       extrude(bone0, bindVertex, bindBone);
       //Bone_1
-      bindVertex = bones[(i * 3) + 1];
-      bindBone = bones[(i * 3) + 2];
+      bindVertex = bones[i * 3 + 1];
+      bindBone = bones[i * 3 + 2];
       bone1.moveTo(src.convex.x, src.convex.y);
       bone1.lineTo(src.midpoint.x, src.midpoint.y);
       bone1.lineTo(dst.midpoint.x, dst.midpoint.y);
       bone1.lineTo(dst.convex.x, dst.convex.y);
       //googleprojectzero.blogspot.com/2019/02/the-curious-case-of-convexity-confusion.html
       let slope = {
-        x: (src.end.x - bones[0].position.x),
-        y: (src.end.y - bones[0].position.y)
+        x: src.end.x - bones[0].position.x,
+        y: src.end.y - bones[0].position.y
       };
 
-      bone1.lineTo(src.end.x + slope.x, (src.end.y + slope.y));
+      bone1.lineTo(src.end.x + slope.x, src.end.y + slope.y);
       bone1.closePath();
       extrude(bone1, bindVertex, bindBone);
-
     }
     bindVertex = bones[0];
     bindBone = bones[0];
 
-
     function extrude(shape, bindVertex, bindBone) {
-
       let geom = new THREE.ExtrudeGeometry(shape, {
         steps: 1,
         depth: 0.1,
         bevelEnabled: false
       });
       geom = new THREE.BufferGeometry().fromGeometry(geom);
-      let hit = new THREE.Mesh(geom, new THREE.MeshLambertMaterial({
-        side: THREE.BackSide, //precisely
-        opacity: 0.125,
-        color: 0x00FFFF,
-        transparent: true
-      }));
+      let hit = new THREE.Mesh(
+        geom,
+        new THREE.MeshLambertMaterial({
+          side: THREE.BackSide, //precisely
+          opacity: 0.125,
+          color: 0x00ffff,
+          transparent: true
+        })
+      );
       //this is 1-off...
       hit.bindVertex = bindVertex.id;
       hit.bindBone = bindBone.id;
@@ -808,11 +836,9 @@ contour.BONES[0][3]
 
       hit.position.z = -0.05;
     }
-
   }
 
   function createGeometry(shape, area) {
-
     var segment = new THREE.Shape();
     segment.autoClose = true;
     for (let j = 0; j < shape.length; j += 2) {
@@ -836,7 +862,7 @@ contour.BONES[0][3]
 
     //opt2: tessellate/subdivide
     //note: balance performance versus quality
-    let maxEdgeLength = (area / sto.width) / 8;
+    let maxEdgeLength = area / sto.width / 8;
     var tessellateModifier = new TessellateModifier(maxEdgeLength);
     for (let k = 0; k < 8; k++) {
       tessellateModifier.modify(geometry);
@@ -874,16 +900,17 @@ contour.BONES[0][3]
         origin = prevBone.name == "Bone_0" ? 0 : 1; // origin offset
         var bone = new THREE.Bone();
         bone.position.x = jnt[j][0] / sto.width - origin * prevBone.position.x;
-        bone.position.y = -jnt[j][1] / sto.height - origin * prevBone.position.y;
+        bone.position.y =
+          -jnt[j][1] / sto.height - origin * prevBone.position.y;
         bone.positionGlobal = {
           x: jnt[j][2][0],
           y: jnt[j][2][1]
         };
         bone.dist = [];
         bone.position.z = 0;
-        bone.cardinal = (bone.position.y > 0) ? 'N' : 'S';
+        bone.cardinal = bone.position.y > 0 ? "N" : "S";
         if (Math.abs(bone.position.x) > 0.02) {
-          bone.cardinal += (bone.position.x < 0) ? 'W' : 'E';
+          bone.cardinal += bone.position.x < 0 ? "W" : "E";
         }
         bone.name = "Bone_" + j;
         bones.push(bone);
@@ -899,22 +926,24 @@ contour.BONES[0][3]
   }
 
   function createMesh(bones, geometry, shadow) {
-
-    //isolate artefacts such as convex shapes and noise  
-    let groupIn = (bones[0].children.length !== 0) ? group : group2;
+    //isolate artefacts such as convex shapes and noise
+    let groupIn = bones[0].children.length !== 0 ? group : group2;
 
     let mesh = new THREE.SkinnedMesh(geometry, [material, materialSides]);
     mesh.position.z = -0.025;
-		
-    let meshLOD = new THREE.SkinnedMesh(shadow, new THREE.MeshStandardMaterial({
-      transparent: true,
-      opacity: 0,
-      alphaMap: material.alphaMap,
-      alphaTest: material.alphaTest,
-      side: THREE.DoubleSide,
-      skinning: true
-    }));
-		meshLOD.name = 'shadow';
+
+    let meshLOD = new THREE.SkinnedMesh(
+      shadow,
+      new THREE.MeshStandardMaterial({
+        transparent: true,
+        opacity: 0,
+        alphaMap: material.alphaMap,
+        alphaTest: material.alphaTest,
+        side: THREE.DoubleSide,
+        skinning: true
+      })
+    );
+    meshLOD.name = "shadow";
 
     //distance material for texture alpha
     //2d helper avoids 3d shadow/map quirks
@@ -945,7 +974,7 @@ contour.BONES[0][3]
     meshLOD.castShadow = true;
 
     rootBone.bind = {
-      id: '',
+      id: "",
       original: mesh.id
     };
 
@@ -970,12 +999,9 @@ contour.BONES[0][3]
         );
 
         bound.updateMatrixWorld();
-
       }
-
     }
 
-    
     function collision(from, to) {
       // calculate objects intersecting the picking ray
       var raycaster = new THREE.Raycaster();
@@ -998,7 +1024,7 @@ contour.BONES[0][3]
       let position = geometry.attributes.position;
 
       var vertex = new THREE.Vector3();
-      console.info('vertices=' + position.count);
+      console.info("vertices=" + position.count);
 
       for (let i = 0; i < position.count; i++) {
         vertex.fromBufferAttribute(position, i);
@@ -1013,12 +1039,13 @@ contour.BONES[0][3]
         //ray test vertex to bone, collision group3
         dist[i] = [];
         for (let j = 0; j < bones.length; j++) {
-          if (bones[j].children.length > 0) { //not end-bone          
+          if (bones[j].children.length > 0) {
+            //not end-bone
             let defect = collision(vertex, bones[j].position);
             if (defect && defect.object.bindVertex) {
               //todo: defect.distance>1e-17 && defect.distance<1
               //console.log(defect);
-              dist[i].push(defect.distance + '|' + defect.object.bindVertex);
+              dist[i].push(defect.distance + "|" + defect.object.bindVertex);
             }
           }
         }
@@ -1028,12 +1055,12 @@ contour.BONES[0][3]
         //combined distances normalized to 1
         let norm = 0;
         for (let k = 0; k < 4; k++) {
-
           let close = dist[i];
-          close = close[k] != undefined ? close[k].split('|') : [0.999, bones[0].id]; //0.999 prevents NaN
+          close =
+            close[k] != undefined ? close[k].split("|") : [0.999, bones[0].id]; //0.999 prevents NaN
           dist[i][k] = {
-            'sWeight': 1 - close[0],
-            'sIndice': close[1] * 1
+            sWeight: 1 - close[0],
+            sIndice: close[1] * 1
           };
 
           norm += dist[i][k].sWeight;
@@ -1045,21 +1072,25 @@ contour.BONES[0][3]
           skinIndices.push(sto.boneIndexes[dist[i][l].sIndice]);
           skinWeights.push(dist[i][l].sWeight * norm);
         }
-
       }
 
       //console.log(skinIndices, skinWeights);
-      geometry.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(skinIndices, 4));
-      geometry.setAttribute("skinWeight", new THREE.Float32BufferAttribute(skinWeights, 4));
+      geometry.setAttribute(
+        "skinIndex",
+        new THREE.Uint16BufferAttribute(skinIndices, 4)
+      );
+      geometry.setAttribute(
+        "skinWeight",
+        new THREE.Float32BufferAttribute(skinWeights, 4)
+      );
     }
-
   }
 
   function setupDatGui() {
-		// todo: add multiple files to scene
-		// mask/replace current until new file
-		// animate from scene bones
-		console.log("GUI");
+    // todo: add multiple files to scene
+    // mask/replace current until new file
+    // animate from scene bones
+    console.log("GUI");
     //workshop.chromeexperiments.com/examples/gui/
     if (gui) gui.destroy();
     gui = new GUI();
@@ -1073,7 +1104,7 @@ contour.BONES[0][3]
     folder.add(sto.state, "animateBones").name("animate");
     folder.add(sprite, "visible").name("bone.id");
     folder.add(material, "wireframe");
-    folder.add(group3, 'visible').name("raytest");
+    folder.add(group3, "visible").name("raytest");
 
     for (let i = 0; i < sto.bones.length; i++) {
       let bone = sto.bones[i];
@@ -1081,28 +1112,35 @@ contour.BONES[0][3]
       makeTextSprite(bone);
 
       if (bone.name === "Root") {
-        folder = (bone.children.length > 0) ? gui : artefact;
+        folder = bone.children.length > 0 ? gui : artefact;
       } else if (bone.name === "Bone_0") {
         folder = root;
       }
 
-      folder = folder.addFolder(bone.name + "_" + bone.id + "__" + bone.cardinal);
+      folder = folder.addFolder(
+        bone.name + "_" + bone.id + "__" + bone.cardinal
+      );
 
       if (bone.name === "Root") {
         root = folder;
 
-        folder.add(bone.parent, "pose")
+        folder
+          .add(bone.parent, "pose")
           .onChange(bone.parent.pose())
-          .onChange(function() {
+          .onChange(function () {
             for (let j = 0; j < sprite.children.length; j++) {
               sprite.children[j].scale.set(1 / 30, 1 / 30, 1 / 30);
             }
           });
-        folder.add(bone.bind, "id").onFinishChange(function(value) {
-          let bind = scene.getObjectById(Number(value));
-          scene.getObjectById(Number(bone.id)).parent = bind ? bind : scene.getObjectById(Number(bone.bind.original));
-
-        }).name("parent.id");
+        folder
+          .add(bone.bind, "id")
+          .onFinishChange(function (value) {
+            let bind = scene.getObjectById(Number(value));
+            scene.getObjectById(Number(bone.id)).parent = bind
+              ? bind
+              : scene.getObjectById(Number(bone.bind.original));
+          })
+          .name("parent.id");
 
         folder
           .add(bone.position, "x", -2 + bone.position.x, 2 + bone.position.x)
@@ -1143,28 +1181,37 @@ contour.BONES[0][3]
     if (sto.state.animateBones) {
       for (let i = 0; i < sto.bones.length; i++) {
         let bone = sto.bones[i];
+        let bi = bone.cardinal.indexOf("E") >= 0 ? 1 : -1;
 
-        if (bone.cardinal == 'axis') {
+        if (bone.cardinal == "axis") {
           //bone.rotation.y += (amount * cycle);
-        } else if (bone.name == 'Bone_0' && bone.cardinal == 'N') {
-          bone.rotation.x -= (amount * cycle) * 4;
-        } else if (bone.name == 'Bone_0' && (bone.cardinal == 'NE' || bone.cardinal == 'NW')) {
-          bone.rotation.z -= (amount * cycle);
+        } else if (bone.name == "Bone_0") {
+          if (bone.cardinal == "N") {
+            bone.rotation.x += 4 * (amount * cycle);
+          } else if (bone.cardinal == "SW" || bone.cardinal == "SE") {
+            bone.rotation.x += 4 * bi * (amount * cycle);
+            let child = bone.children[0];
+            child.rotation.x += 4 * bi * (amount * cycle);
+          } else if (bone.cardinal == "NW" || bone.cardinal == "NE") {
+            bone.parent.rotation.x *= bi;
+            bone.children[0].rotation.x += 2 * bi * (amount * -cycle);
+            let child = bone.children[0];
+            child.rotation.x += 2 * bi * (amount * -cycle);
+          }
         }
-
       }
     }
     renderer.render(scene, camera);
   }
 
   function makeTextSprite(bone) {
-    let canvas = document.createElement('canvas');
-    let ctx = canvas.getContext('2d');
+    let canvas = document.createElement("canvas");
+    let ctx = canvas.getContext("2d");
 
     // text
     canvas.width = 64;
     canvas.height = canvas.width * 0.5;
-    ctx.fillStyle = 'cyan';
+    ctx.fillStyle = "cyan";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.font = canvas.height + "px monospace";
     ctx.textAlign = "center";
@@ -1188,16 +1235,18 @@ contour.BONES[0][3]
     boneId.position.set(
       bone.position.x / sto.width,
       bone.position.y / sto.height,
-      0);
+      0
+    );
     boneId.scale.divideScalar(30);
     sprite.add(boneId);
 
     boneId.parent = scene.getObjectById(bone.id);
+    canvas = null;
   }
 }
 
-var touchupButton = document.getElementById('touchupMask');
-touchupButton.addEventListener('click', grabCut);
+var touchupButton = document.getElementById("touchupMask");
+touchupButton.addEventListener("click", grabCut);
 //www.createjs.com/demos/easeljs/curveto
 var touchup, stage;
 var drawingCanvas;
@@ -1237,9 +1286,17 @@ function handleMouseDown() {
 }
 
 function handleMouseMove() {
-  var midPt = new createjs.Point(oldPt.x + stage.mouseX >> 1, oldPt.y + stage.mouseY >> 1);
+  var midPt = new createjs.Point(
+    (oldPt.x + stage.mouseX) >> 1,
+    (oldPt.y + stage.mouseY) >> 1
+  );
 
-  drawingCanvas.graphics.clear().setStrokeStyle(stroke, 'round', 'round').beginStroke(color).moveTo(midPt.x, midPt.y).curveTo(oldPt.x, oldPt.y, oldMidPt.x, oldMidPt.y);
+  drawingCanvas.graphics
+    .clear()
+    .setStrokeStyle(stroke, "round", "round")
+    .beginStroke(color)
+    .moveTo(midPt.x, midPt.y)
+    .curveTo(oldPt.x, oldPt.y, oldMidPt.x, oldMidPt.y);
 
   oldPt.x = stage.mouseX;
   oldPt.y = stage.mouseY;
@@ -1259,29 +1316,30 @@ init();
 var exporter = new GLTFExporter();
 
 function export3d() {
-
-  let name = document.getElementById('photo').files[0];
-  name = name ? name.name : document.getElementById('chromaImg').src;
-  name = name.slice(0, name.lastIndexOf('.'))
-    .slice(name.lastIndexOf('/') + 1);
+  let name = document.getElementById("photo").files[0];
+  name = name ? name.name : document.getElementById("chromaImg").src;
+  name = name.slice(0, name.lastIndexOf(".")).slice(name.lastIndexOf("/") + 1);
 
   // Parse the input and generate the glTF output
   for (let i = 0; i < sto.bones.length; i++) {
-    if (sto.bones[i].name != 'Root') {
-			//todo: if no children, check min area?
+    if (sto.bones[i].name != "Root") {
+      //todo: if no children, check min area?
       continue;
     }
-		
-		let limbs = sto.bones[i].children.length;
 
-    exporter.parse(sto.bones[i].parent, function(gltf) {
-      console.log(name, gltf);
-      saveString(JSON.stringify(gltf), name + '_' + limbs + '.glb');
-    }, {
-      'forceIndices': true
-    });
+    let limbs = sto.bones[i].children.length;
+
+    exporter.parse(
+      sto.bones[i].parent,
+      function (gltf) {
+        console.log(name, gltf);
+        saveString(JSON.stringify(gltf), name + "_" + limbs + ".glb");
+      },
+      {
+        forceIndices: true
+      }
+    );
   }
-
 }
 
 function save(blob, filename) {
@@ -1291,14 +1349,17 @@ function save(blob, filename) {
 }
 
 function saveString(text, filename) {
-  save(new Blob([text], {
-    type: 'text/plain'
-  }), filename);
+  save(
+    new Blob([text], {
+      type: "text/plain"
+    }),
+    filename
+  );
 }
 
-var link = document.createElement('a');
-link.style.display = 'none';
+var link = document.createElement("a");
+link.style.display = "none";
 document.body.appendChild(link);
 
-var exportButton = document.getElementById('export3d');
-exportButton.addEventListener('click', export3d);
+var exportButton = document.getElementById("export3d");
+exportButton.addEventListener("click", export3d);
